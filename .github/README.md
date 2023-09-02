@@ -1,11 +1,16 @@
 ![](/.github/logo.png)
 
 # Veeam Log Anonymizer 
-## __A tool to anonimyze your Veeam logs__
+[![Twitter: JMousqueton](https://img.shields.io/twitter/follow/JMousqueton.svg?style=social)](https://twitter.com/JMousqueton)
 
-VeeamLogAnonymizeris python scrypt to anonimyze your log 
+> __A tool to anonimyze your Veeam logs__
 
-This script is still as an early stage of development. DO NOT USE.
+
+VeeamLogAnonymizeris python scrypt to anonimyze your [Veeam](https://www.veeam.com) Backup & Replication v12 log.
+
+⚠️ UNDER CONSTRUCTION ⚠️
+
+This script is still as an early stage of development. ⛔️ DO NOT USE.
 
 ## Features
 
@@ -24,7 +29,7 @@ Veeam Log Anonymizer, anonymizes :
 
 ## Installation
 
-**UNDER CONSTRUCTION**
+coming soon
 
 ## Usage 
 
@@ -55,8 +60,30 @@ options:
   --force               Force overwrite if output files exist or force the creation of output directory
   ```
 
-## Development
-Want to contribute? Great!
+## Author
 
-## License
-GNU GENERAL PUBLIC LICENSE version 3 
+👤 **Julien Mousqueton**
+
+* Website: <https://www.julien.io>
+* Twitter: [@JMousqueton](https://twitter.com/JMousqueton)
+* Github: [@JMousqueton](https://github.com/JMousqueton)
+* LinkedIn: [Julien Mousqueton](https://linkedin.com/in/julienmousqueton)
+
+## 🤝 Contributing
+
+Contributions, issues and feature requests are welcome!
+
+Feel free to check [issues page](https://github.com/JMousqueton/Badware/issues).
+
+## Acknowledgements
+
+* Bertrand 
+* Eric 
+  
+## Show your support
+
+Give a ⭐️ if this project helped you!
+
+## 📝 License
+
+This project is under [GNU GENERAL PUBLIC LICENSE version 3](https://github.com/JMousqueton/VeeamLogAnonymizer/blob/main/LICENSE).
