@@ -3,7 +3,7 @@
 
 __author__ = "Julien Mousqueton"
 __copyright__ = "Copyright 2023, Julien Mousqueton"
-__version__ = "0.2"
+__version__ = "0.3"
 
 # Import necessary modules
 import re
@@ -13,6 +13,7 @@ import sys
 import os
 import argparse
 import logging
+import json
 
 # Configure logging
 logging.basicConfig(
@@ -37,42 +38,6 @@ def errlog(msg):
 def generate_random_string(length=12):
     characters = string.ascii_letters + string.digits
     return ''.join(random.choice(characters) for _ in range(length))
-
-def searchVBRName(log_file_path):
-    pattern = r"HostName:\s*\[([^\]]+)\]"
-    try:
-        with open(log_file_path, "r") as log_file:
-            log_content = log_file.read()
-
-        matches = re.findall(pattern, log_content)
-
-        if matches:
-            return matches
-        else:
-            return None
-    except FileNotFoundError:
-        return f"Error: File '{log_file_path}' not found."
-    except Exception as e:
-        return f"An error occurred: {str(e)}"
-    
-
-def find_texte_location(log_file_path):
-    # Define a regular expression pattern to match "Location: [some texte]"
-    pattern = r'Location:\s*\[(.*?)\]'
-    try:
-        with open(log_file_path, "r") as log_file:
-            log_content = log_file.read()
-
-        matches = re.findall(pattern, log_content)
-
-        if matches:
-            return matches
-        else:
-            return None
-    except FileNotFoundError:
-        return f"Error: File '{log_file_path}' not found."
-    except Exception as e:
-        return f"An error occurred: {str(e)}"
 
 def replace_string_in_file(input, output, old_value, new_value):
     with open(input, 'r') as file:
@@ -113,6 +78,13 @@ def is_IP(string):
     else:
         return False
 
+def anonymized_IPv4(ip):
+    ip_address = ip.split(".")
+    ip_address[0] = "**"
+    ip_address[1] = "**"
+    masked_ip = ".".join(ip_address)
+    return masked_ip
+
 
 def process_IP(input_file, output_file):
     # Define a regular expression pattern to match IP addresses
@@ -128,24 +100,31 @@ def process_IP(input_file, output_file):
     # Replace the first two numbers with "*"
     for ip in ip_addresses:
         #masked_ip = re.sub(r'(\d{1,3}\.\d{1,3})', r'**.**', ip)
-        ip_address = ip.split(".")
-        ip_address[0] = "**"
-        ip_address[1] = "**"
-        masked_ip = ".".join(ip_address)
-        content = content.replace(ip, masked_ip)
+        #ip_address = ip.split(".")
+        #ip_address[0] = "**"
+        #ip_address[1] = "**"
+        #masked_ip = ".".join(ip_address)
+        content = content.replace(ip, anonymized_IPv4(ip))
 
     # Write the modified content back to the file
     with open(output_file, 'w') as file:
         file.write(content)
     
-def find_SMTP_server(log_file_path):
-    pattern = r"'SMTP Server '(.*?)'"
+
+def find_pattern(pattern_key,log_file_path,):
     try:
+        with open("patterns.json", "r") as patterns_file:
+            patterns_dict = json.load(patterns_file)
+        
+        pattern = patterns_dict.get(pattern_key)
+        if not pattern:
+            return f"Pattern key '{pattern_key}' not found in patterns.json."
+
         with open(log_file_path, "r") as log_file:
             log_content = log_file.read()
 
         matches = re.findall(pattern, log_content)
-        
+
         if matches:
             return matches
         else:
@@ -154,43 +133,6 @@ def find_SMTP_server(log_file_path):
         return f"Error: File '{log_file_path}' not found."
     except Exception as e:
         return f"An error occurred: {str(e)}"
-
-
-def find_username(log_file_path):
-    pattern = r"UserName: '([^']+)'"
-    try:
-        with open(log_file_path, "r") as log_file:
-            log_content = log_file.read()
-
-        matches = re.findall(pattern, log_content)
-        
-        if matches:
-            return matches
-        else:
-            return None
-    except FileNotFoundError:
-        return f"Error: File '{log_file_path}' not found."
-    except Exception as e:
-        return f"An error occurred: {str(e)}"
-    
-
-def find_email(log_file_path):
-    pattern = r'(?<=Sending report to\s)[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
-    try:
-        with open(log_file_path, "r") as log_file:
-            log_content = log_file.read()
-
-        matches = re.findall(pattern, log_content)
-        
-        if matches:
-            return matches
-        else:
-            return None
-    except FileNotFoundError:
-        return f"Error: File '{log_file_path}' not found."
-    except Exception as e:
-        return f"An error occurred: {str(e)}"
-
 
 
 def main():
@@ -199,6 +141,10 @@ def main():
     parser.add_argument("-d", "--directory", dest="input_directory", help="Input directory containing log files")
     parser.add_argument("-o", "--output", dest="output_directory", required=True, help="Output directory for processed log files")
     parser.add_argument("--force", action="store_true", help="Force overwrite if output files exist or force the creation of output directory")
+
+    if not os.path.exists('patterns.json'):
+        errlog("Error: patterns.json not found.")
+        sys.exit(1)
 
     args = parser.parse_args()
 
@@ -219,7 +165,7 @@ def main():
     Location = False
     UserName = False
     Email = False
-    SMTP = False 
+    SMTPServer = False 
 
     stdlog('Collecting information')
     for input_file in input_files:
@@ -228,23 +174,26 @@ def main():
         if os.path.exists(output_file) and not args.force:
             errlog(f'Error: Output file {output_file} already exists. Use --force to overwrite.')
             sys.exit(1)
-        if not SMTP:
-            SMTP = str(find_SMTP_server(input_file)[0])
-            RandomSMTP = str(generate_random_string())
-            stdlog('* SMTP Server : ' + SMTP + ' -> ' + RandomSMTP)
+        if not SMTPServer:
+            SMTPServer = str(find_pattern('SMTPServer',input_file)[0])
+            if is_fqdn(SMTPServer):
+                RandomSMTP = str(generate_random_string())
+            else:
+                RandomSMTP = anonymized_IPv4(SMTPServer)
+            stdlog('* SMTP Server : ' + SMTPServer + ' -> ' + RandomSMTP)
         if not VeeamServer: 
-            VeeamServer = str(searchVBRName(input_file)[0])
+            VeeamServer = str(find_pattern('VeeamServer',input_file)[0])
             RandomVeeamServer = str(generate_random_string())
             stdlog('* Veeam Server : ' + VeeamServer + ' -> ' + RandomVeeamServer)
         if not UserName:
-            UserName = str(find_username(input_file)[0])
+            UserName = str(find_pattern('UserName',input_file)[0])
             if '@' in UserName:
                 RandomUserName = str(generate_random_string())+'@'+ str(generate_random_string())
             else:
                 RandomUserName = str(generate_random_string())
-            stdlog('* UserName : ' + UserName + ' -> ' + RandomUserName)
+            stdlog('* Username : ' + UserName + ' -> ' + RandomUserName)
         if not Location:
-            Location = str(find_texte_location(input_file)[0])
+            Location = str(find_pattern('vCenter',input_file)[0])
             RandomvCenter = str(generate_random_string())
             vCenter = str(get_object_from_location(Location)[0])
             if is_fqdn(vCenter):
@@ -261,7 +210,7 @@ def main():
                 RandomCluster = str(generate_random_string())
                 stdlog('* Cluster : ' + Cluster + ' -> ' + RandomCluster)
         if not Email: 
-            Email = str(find_email(input_file)[0])
+            Email = str(find_pattern('Email',input_file)[0])
             RandomEmail= str(generate_random_string()) + '@' + str(generate_random_string())
             stdlog('* Email : ' + Email + ' -> ' + RandomEmail)
 
@@ -284,7 +233,7 @@ def main():
         # Remplace Veeam Server 
         replace_string_in_file(output_file, output_file, VeeamServer, RandomVeeamServer)
         # For SMTP
-        replace_string_in_file(output_file, output_file, SMTP, RandomSMTP)
+        replace_string_in_file(output_file, output_file, SMTPServer, RandomSMTP)
         # For vCenter 
         replace_string_in_file(output_file, output_file, vCenter, RandomvCenter)
         # For Datacenter 

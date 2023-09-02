@@ -1,0 +1,7 @@
+{
+    "VeeamServer": "HostName:\\s*\\[([^\\]]+)\\]",
+    "vCenter": "Location:\\s*\\[(.*?)\\]",
+    "SMTPServer": "'SMTP Server '(.*?)'",
+    "UserName": "UserName: '([^']+)\\'",
+    "Email": "(?<=Sending report to\\s)([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,7}\\b)"
+}
