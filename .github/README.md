@@ -1,4 +1,4 @@
-![](.github/logo.png)
+![](/.github/logo.png)
 
 # Veeam Log Anonymizer 
 ## __A tool to anonimyze your Veeam logs__
