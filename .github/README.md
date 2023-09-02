@@ -12,9 +12,10 @@ This script is still as an early stage of development. DO NOT USE.
 Veeam Log Anonymizer, anonymizes : 
 
 - Veeam Server name 
+- Usernames 
 - IPs address 
 - SMTP Server     
-- UserName
+- vCenter Username 
 - Domain
 - vCenter Server
 - vCenter Datacenter
