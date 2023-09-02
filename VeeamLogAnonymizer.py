@@ -244,7 +244,7 @@ def main():
         # For IPs
         process_IP(output_file,output_file)
         stdlog('File ' + input_file + ' processed')
-    stdlog('Anonymizng finised ')
+    stdlog('Anonymizng finished ')
         
 
 
