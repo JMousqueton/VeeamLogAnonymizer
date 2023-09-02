@@ -130,8 +130,10 @@ def main():
                 ServerName = str(searchVBRName(input_file)[0])
                 RandomName = str(generate_random_string())
                 stdlog('* ' + ServerName + ' -> ' + RandomName)
+            stdlog('processing '+ input_file)   
             replace_string_in_file(input_file, output_file, ServerName, RandomName)
-            process_IP(input_file,output_file)
+            process_IP(output_file,output_file)
+            stdlog(input_file +' processed')
         else:
             errlog("Unknown log format")
 
