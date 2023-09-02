@@ -3,7 +3,7 @@
 
 __author__ = "Julien Mousqueton"
 __copyright__ = "Copyright 2023, Julien Mousqueton"
-__version__ = "0.3"
+__version__ = "0.4"
 
 # Import necessary modules
 import re
@@ -14,6 +14,7 @@ import os
 import argparse
 import logging
 import json
+import shutil
 
 # Configure logging
 logging.basicConfig(
@@ -124,6 +125,7 @@ def find_pattern(pattern_key,log_file_path,):
             log_content = log_file.read()
 
         matches = re.findall(pattern, log_content)
+        matches = list(set(matches))
 
         if matches:
             return matches
@@ -140,7 +142,7 @@ def main():
     parser.add_argument("-i", "--input", dest="input_file", help="Input log file")
     parser.add_argument("-d", "--directory", dest="input_directory", help="Input directory containing log files")
     parser.add_argument("-o", "--output", dest="output_directory", required=True, help="Output directory for processed log files")
-    parser.add_argument("--force", action="store_true", help="Force overwrite if output files exist or force the creation of output directory")
+    parser.add_argument("-f", "--force", action="store_true", help="Force overwrite if output files exist or force the creation of output directory if not exists")
 
     if not os.path.exists('patterns.json'):
         errlog("Error: patterns.json not found.")
@@ -152,6 +154,9 @@ def main():
         input_files = [args.input_file]
     elif args.input_directory:
         input_directory = args.input_directory
+        if not os.path.isdir(input_directory):
+            errlog('Error : '+ input_directory +' is not a directory')
+            sys.exit(1)
         if not os.path.exists(input_directory):
             errlog('Error: Input directory ' + input_directory + ' does not exist.')
             sys.exit(1)
@@ -159,60 +164,94 @@ def main():
     else:
         errlog('Error: You must specify either -i or -d.')
         sys.exit(1)
-
+        
     output_directory = args.output_directory
     VeeamServer = False
+    VeeamUserList = []
+    tmpUser_set = set()
     Location = False
-    UserName = False
+    vCenterUser = False
     Email = False
     SMTPServer = False 
+    Domain = False
+    vCenter= False
+    Datacenter = False
+    Cluster = False
 
     stdlog('Collecting information')
     for input_file in input_files:
         filename = os.path.basename(input_file)
+        dbglog('*** ' +  filename)
         output_file = os.path.join(output_directory, filename)
         if os.path.exists(output_file) and not args.force:
-            errlog(f'Error: Output file {output_file} already exists. Use --force to overwrite.')
+            errlog(f'Error: Output file {output_file} already exists. Use -f or --force to overwrite.')
             sys.exit(1)
+    
         if not SMTPServer:
-            SMTPServer = str(find_pattern('SMTPServer',input_file)[0])
-            if is_fqdn(SMTPServer):
-                RandomSMTP = str(generate_random_string())
-            else:
-                RandomSMTP = anonymized_IPv4(SMTPServer)
-            stdlog('* SMTP Server : ' + SMTPServer + ' -> ' + RandomSMTP)
+            try:
+                SMTPServer = str(find_pattern('SMTPServer',input_file)[0])
+                if is_fqdn(SMTPServer):
+                    RandomSMTP = str(generate_random_string())
+                else:
+                    RandomSMTP = anonymized_IPv4(SMTPServer)
+                stdlog('* SMTP Server : ' + SMTPServer + ' -> ' + RandomSMTP)
+            except:
+                pass
         if not VeeamServer: 
             VeeamServer = str(find_pattern('VeeamServer',input_file)[0])
             RandomVeeamServer = str(generate_random_string())
             stdlog('* Veeam Server : ' + VeeamServer + ' -> ' + RandomVeeamServer)
-        if not UserName:
-            UserName = str(find_pattern('UserName',input_file)[0])
-            if '@' in UserName:
-                RandomUserName = str(generate_random_string())+'@'+ str(generate_random_string())
-            else:
-                RandomUserName = str(generate_random_string())
-            stdlog('* Username : ' + UserName + ' -> ' + RandomUserName)
+        
+        VeeamUsers = find_pattern('VeeamUser',input_file)
+        for VeeamUser in VeeamUsers:
+            tmpUser = VeeamUser.split("\\")[1]
+            tmpRandom = str(generate_random_string())
+            if tmpUser in tmpUser_set:
+                continue
+            tmpUser_set.add(tmpUser)  # Add the unique tmpUser value to the set
+            element = (tmpUser, tmpRandom)
+            VeeamUserList.append(element)
+        if not vCenterUser:
+            try:
+                vCenterUser = str(find_pattern('vCenterUser',input_file)[0])
+                if '@' in vCenterUser:
+                    RandomvCenterUser = str(generate_random_string())+'@'+ str(generate_random_string())
+                else:
+                    RandomvCenterUser = str(generate_random_string())
+                stdlog('* vCenter User : ' + vCenterUser + ' -> ' + RandomvCenterUser)
+            except:
+                pass
         if not Location:
-            Location = str(find_pattern('vCenter',input_file)[0])
-            RandomvCenter = str(generate_random_string())
-            vCenter = str(get_object_from_location(Location)[0])
-            if is_fqdn(vCenter):
-                RandomDomain = str(generate_random_string())
-                Domain = '.'.join(get_element_from_fqdn(vCenter)[1:])
-                stdlog('* Domain : ' + Domain + ' -> ' +  RandomDomain)
-                vCenter = get_element_from_fqdn(vCenter)[0]
-            stdlog('* vCenter : '+ vCenter + ' -> ' +  RandomvCenter)
-            Datacenter = str(get_object_from_location(Location)[1])
-            RandomDatacenter= str(generate_random_string())
-            stdlog('* Datacenter : ' + Datacenter + ' -> ' + RandomDatacenter)
-            if len(Location) > 3:
-                Cluster = str(get_object_from_location(Location)[2])
-                RandomCluster = str(generate_random_string())
-                stdlog('* Cluster : ' + Cluster + ' -> ' + RandomCluster)
-        if not Email: 
-            Email = str(find_pattern('Email',input_file)[0])
-            RandomEmail= str(generate_random_string()) + '@' + str(generate_random_string())
-            stdlog('* Email : ' + Email + ' -> ' + RandomEmail)
+            try:
+                Location = str(find_pattern('vCenter',input_file)[0])
+                RandomvCenter = str(generate_random_string())
+                vCenter = str(get_object_from_location(Location)[0])
+                if is_fqdn(vCenter):
+                    RandomDomain = str(generate_random_string())
+                    Domain = '.'.join(get_element_from_fqdn(vCenter)[1:])
+                    stdlog('* Domain : ' + Domain + ' -> ' +  RandomDomain)
+                    vCenter = get_element_from_fqdn(vCenter)[0]
+                stdlog('* vCenter : '+ vCenter + ' -> ' +  RandomvCenter)
+                Datacenter = str(get_object_from_location(Location)[1])
+                RandomDatacenter= str(generate_random_string())
+                stdlog('* Datacenter : ' + Datacenter + ' -> ' + RandomDatacenter)
+                if len(Location) > 3:
+                    Cluster = str(get_object_from_location(Location)[2])
+                    RandomCluster = str(generate_random_string())
+                    stdlog('* Cluster : ' + Cluster + ' -> ' + RandomCluster)
+            except:
+                pass
+        if not Email:
+            try:
+                Email = str(find_pattern('Email',input_file)[0])
+                RandomEmail= str(generate_random_string()) + '@' + str(generate_random_string())
+                stdlog('* Email : ' + Email + ' -> ' + RandomEmail)
+            except:
+                pass
+    
+
+    # Clean list 
+    UniqueVeeamUsers =list(set(VeeamUserList))
 
     stdlog('Processing anonymizing ... ')
     for input_file in input_files:
@@ -220,30 +259,47 @@ def main():
         output_file = os.path.join(output_directory, filename)
 
         if not os.path.exists(output_directory) and args.force:
-            os.makedirs(output_directory)
-    
+            os.makedirs(output_directory)    
         stdlog('- Processing file  '+ input_file)
-        # For UserName 
-        replace_string_in_file(input_file,output_file, UserName, RandomUserName)
-        # For Email 
-        replace_string_in_file(output_file, output_file, Email, RandomEmail)
-        # For Domain 
+        try:
+            shutil.copy(input_file, output_file)
+        except:
+            errlog('Fatal Error processing ...')
+            sys.exit(1)
+        if vCenterUser:
+            replace_string_in_file(output_file,output_file, vCenterUser, RandomvCenterUser)
+            dbglog('    + anonymizing username')
+        if Email: 
+            replace_string_in_file(output_file, output_file, Email, RandomEmail)
+            dbglog('    + anonymizing email address')
         if Domain: 
             replace_string_in_file(output_file, output_file, Domain, RandomDomain)
-        # Remplace Veeam Server 
-        replace_string_in_file(output_file, output_file, VeeamServer, RandomVeeamServer)
-        # For SMTP
-        replace_string_in_file(output_file, output_file, SMTPServer, RandomSMTP)
-        # For vCenter 
-        replace_string_in_file(output_file, output_file, vCenter, RandomvCenter)
-        # For Datacenter 
-        replace_string_in_file(output_file, output_file, Datacenter, RandomDatacenter)
-        if RandomCluster: 
+            dbglog('    + anonymizing domain name')
+        if VeeamServer: 
+            replace_string_in_file(output_file, output_file, VeeamServer, RandomVeeamServer)
+            dbglog('    + anonymizing VeeamServer')
+        if len(UniqueVeeamUsers) > 0: 
+            for VeeamUser in UniqueVeeamUsers:
+                _OriginalUser, _RandomUser = VeeamUser
+                replace_string_in_file(output_file, output_file, _OriginalUser, _RandomUser)
+                dbglog('    + anonymizing Veeam Users')
+        if SMTPServer:
+            replace_string_in_file(output_file, output_file, SMTPServer, RandomSMTP)
+            dbglog('    + anonymizing SMTP Server')
+        if vCenter: 
+            replace_string_in_file(output_file, output_file, vCenter, RandomvCenter)
+            dbglog('    + anonymizing vCenter Server')
+        if Datacenter: 
+            replace_string_in_file(output_file, output_file, Datacenter, RandomDatacenter)
+            dbglog('    + anonymizing vCenter Datacenter')
+        if Cluster: 
             # For Cluster 
             replace_string_in_file(output_file, output_file, Cluster, RandomCluster)
+            dbglog('    + anonymizing vCenter Clusster')
         # For IPs
+        dbglog('    + anonymizing IP Address')
         process_IP(output_file,output_file)
-        stdlog('File ' + input_file + ' processed')
+        dbglog('- File ' + input_file + ' processed')
     stdlog('Anonymizng finished ')
         
 
@@ -255,7 +311,7 @@ if __name__ == "__main__":
  \ \ / / | .-'  | .-'   / /\ \ |\    /|         | |   / .-. ) .' .'              / /\ \ |  \| |/ .-. ) |  \| | \ \_/ )/|\    /||(|/___  / | .-'  | .-.\   
   \ V /  | `-.  | `-.  / /__\ \|(\  / |         | |   | | |(_)|  |  __          / /__\ \|   | || | |(_)|   | |  \   (_)|(\  / |(_)   / /) | `-.  | `-'/   
    ) /   | .-'  | .-'  |  __  |(_)\/  |         | |   | | | | \  \ ( _)         |  __  || |\  || | | | | |\  |   ) (   (_)\/  || |  / /(_)| .-'  |   (    
-  (_)    |  `--.|  `--.| |  |)|| \  / |         | `--.\ `-' /  \  `-) )         | |  |)|| | |)|\ `-' / | | |)|   | |   | \  / || | / /___ |  `--.| |\ \   
+   (_)   |  `--.|  `--.| |  |)|| \  / |         | `--.\ `-' /  \  `-) )         | |  |)|| | |)|\ `-' / | | |)|   | |   | \  / || | / /___ |  `--.| |\ \   
          /( __.'/( __.'|_|  (_)| |\/| |         |( __.')---'   )\____/          |_|  (_)/(  (_) )---'  /(  (_)  /(_|   | |\/| |`-'(_____/ /( __.'|_| \)\  
         (__)   (__)            '-'  '-'         (_)   (_)     (__)                     (__)    (_)    (__)     (__)    '-'  '-'          (__) v {__version__}  (__) 
     by Julien Mousqueton (@JMousqueton)
