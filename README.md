@@ -3,12 +3,21 @@
 
 VeeamLogAnonymizeris python scrypt to anonimyze your log 
 
-This script is still as an early stage of development. DO NOT USE. 
-## Features
-Now Veeam Log Anonymizer, anonymize 
+This script is still as an early stage of development. DO NOT USE.
 
-- Server name 
+## Features
+
+Veeam Log Anonymizer, anonymizes : 
+
+- Veeam Server name 
 - IPs address 
+- SMTP Server     
+- UserName
+- Domain
+- vCenter Server
+- vCenter Datacenter
+- vCenter Cluster
+- Email
 
 ## Installation
 
