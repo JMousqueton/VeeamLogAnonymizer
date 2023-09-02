@@ -6,13 +6,16 @@
 > __A tool to anonimyze your Veeam logs__
 
 
-VeeamLogAnonymizeris python scrypt to anonimyze your [Veeam](https://www.veeam.com) Backup & Replication v12 log.
+VeeamLogAnonymizeris is a python script which anonimyzes your [Veeam](https://www.veeam.com) Backup & Replication v12 log.
+Usefull when you need some confidentiality before sending log to support. 
+
+## ⚠️ Disclamer 
 
 ⚠️ UNDER CONSTRUCTION ⚠️
 
 This script is still as an early stage of development. ⛔️ DO NOT USE.
 
-## Features
+## ⚙️ Features
 
 Veeam Log Anonymizer, anonymizes : 
 
@@ -27,11 +30,11 @@ Veeam Log Anonymizer, anonymizes :
 - vCenter Cluster
 - Email
 
-## Installation
+## 💿 Installation
 
 coming soon
 
-## Usage 
+## 🚀 Usage 
 
 ```bash
 python3 VeeamLogAnonymizer.py --help
@@ -75,7 +78,9 @@ Contributions, issues and feature requests are welcome!
 
 Feel free to check [issues page](https://github.com/JMousqueton/Badware/issues).
 
-## Acknowledgements
+## 🙏🏻 Acknowledgements
+
+For the idea and there support 
 
 * Bertrand 
 * Eric 
