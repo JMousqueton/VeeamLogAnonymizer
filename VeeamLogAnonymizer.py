@@ -3,7 +3,7 @@
 
 __author__ = "Julien Mousqueton"
 __copyright__ = "Copyright 2023, Julien Mousqueton"
-__version__ = "0.4"
+__version__ = "0.5"
 
 # Import necessary modules
 import re
@@ -138,11 +138,12 @@ def find_pattern(pattern_key,log_file_path,):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Replace server names in log files within a directory or an individual log file with random strings.")
+    parser = argparse.ArgumentParser(description="Anonymize your Veeam Backup & Replication logs.")
     parser.add_argument("-i", "--input", dest="input_file", help="Input log file")
     parser.add_argument("-d", "--directory", dest="input_directory", help="Input directory containing log files")
     parser.add_argument("-o", "--output", dest="output_directory", required=True, help="Output directory for processed log files")
     parser.add_argument("-f", "--force", action="store_true", help="Force overwrite if output files exist or force the creation of output directory if not exists")
+    parser.add_argument("-u","--users", action="store_true", help="Display the user mapping table")
 
     if not os.path.exists('patterns.json'):
         errlog("Error: patterns.json not found.")
@@ -194,23 +195,23 @@ def main():
                     RandomSMTP = str(generate_random_string())
                 else:
                     RandomSMTP = anonymized_IPv4(SMTPServer)
-                stdlog('* SMTP Server : ' + SMTPServer + ' -> ' + RandomSMTP)
             except:
                 pass
         if not VeeamServer: 
             VeeamServer = str(find_pattern('VeeamServer',input_file)[0])
             RandomVeeamServer = str(generate_random_string())
-            stdlog('* Veeam Server : ' + VeeamServer + ' -> ' + RandomVeeamServer)
-        
         VeeamUsers = find_pattern('VeeamUser',input_file)
-        for VeeamUser in VeeamUsers:
-            tmpUser = VeeamUser.split("\\")[1]
-            tmpRandom = str(generate_random_string())
-            if tmpUser in tmpUser_set:
-                continue
-            tmpUser_set.add(tmpUser)  # Add the unique tmpUser value to the set
-            element = (tmpUser, tmpRandom)
-            VeeamUserList.append(element)
+        try: 
+            for VeeamUser in VeeamUsers:
+                tmpUser = VeeamUser.split("\\")[1]
+                tmpRandom = str(generate_random_string())
+                if tmpUser in tmpUser_set:
+                    continue
+                tmpUser_set.add(tmpUser)  # Add the unique tmpUser value to the set
+                element = (tmpUser, tmpRandom)
+                VeeamUserList.append(element)
+        except:
+            pass
         if not vCenterUser:
             try:
                 vCenterUser = str(find_pattern('vCenterUser',input_file)[0])
@@ -218,7 +219,6 @@ def main():
                     RandomvCenterUser = str(generate_random_string())+'@'+ str(generate_random_string())
                 else:
                     RandomvCenterUser = str(generate_random_string())
-                stdlog('* vCenter User : ' + vCenterUser + ' -> ' + RandomvCenterUser)
             except:
                 pass
         if not Location:
@@ -229,23 +229,18 @@ def main():
                 if is_fqdn(vCenter):
                     RandomDomain = str(generate_random_string())
                     Domain = '.'.join(get_element_from_fqdn(vCenter)[1:])
-                    stdlog('* Domain : ' + Domain + ' -> ' +  RandomDomain)
                     vCenter = get_element_from_fqdn(vCenter)[0]
-                stdlog('* vCenter : '+ vCenter + ' -> ' +  RandomvCenter)
                 Datacenter = str(get_object_from_location(Location)[1])
                 RandomDatacenter= str(generate_random_string())
-                stdlog('* Datacenter : ' + Datacenter + ' -> ' + RandomDatacenter)
                 if len(Location) > 3:
                     Cluster = str(get_object_from_location(Location)[2])
                     RandomCluster = str(generate_random_string())
-                    stdlog('* Cluster : ' + Cluster + ' -> ' + RandomCluster)
             except:
                 pass
         if not Email:
             try:
                 Email = str(find_pattern('Email',input_file)[0])
                 RandomEmail= str(generate_random_string()) + '@' + str(generate_random_string())
-                stdlog('* Email : ' + Email + ' -> ' + RandomEmail)
             except:
                 pass
     
@@ -253,14 +248,66 @@ def main():
     # Clean list 
     UniqueVeeamUsers =list(set(VeeamUserList))
 
+
+    # Show the mapping 
+    ## VEEAM
+    try:
+        stdlog('* Veeam Server : ' + VeeamServer + ' -> ' + RandomVeeamServer)
+    except: 
+        pass
+    try:
+        stdlog('* Domain : ' + Domain + ' -> ' +  RandomDomain)
+    except: 
+        pass
+    try:
+        stdlog('* SMTP Server : ' + SMTPServer + ' -> ' + RandomSMTP)
+    except: 
+        pass
+    try:
+        stdlog('* Email : ' + Email + ' -> ' + RandomEmail)
+    except: 
+        pass
+    try:
+        ## VMWARE
+        stdlog('* vCenter : '+ vCenter + ' -> ' +  RandomvCenter) 
+    except: 
+        pass
+    try:   
+        stdlog('* vCenter User : ' + vCenterUser + ' -> ' + RandomvCenterUser)
+    except: 
+        pass
+    try:
+        stdlog('* Datacenter : ' + Datacenter + ' -> ' + RandomDatacenter)
+    except: 
+        pass
+    try:
+        stdlog('* Cluster : ' + Cluster + ' -> ' + RandomCluster)
+    except: 
+        pass
+
+
+    if args.users:
+        stdlog("**** ")
+        stdlog("User Mapping Table :")
+        try:
+            for VeeamUser in UniqueVeeamUsers:
+                _OriginalUser, _RandomUser = VeeamUser
+                stdlog( _OriginalUser + ' -> ' + _RandomUser)
+        except: 
+            pass
+        stdlog('****')
+    
+
     stdlog('Processing anonymizing ... ')
     for input_file in input_files:
         filename = os.path.basename(input_file)
         output_file = os.path.join(output_directory, filename)
 
         if not os.path.exists(output_directory) and args.force:
-            os.makedirs(output_directory)    
-        stdlog('- Processing file  '+ input_file)
+            os.makedirs(output_directory)  
+        file_size_bytes = os.path.getsize(input_file)
+        file_size_megabytes = round(file_size_bytes / (1024 * 1024),2)
+        stdlog('- Processing file  '+ filename + '(' + str(file_size_megabytes)+ ' Mb)')
         try:
             shutil.copy(input_file, output_file)
         except:
@@ -301,7 +348,7 @@ def main():
         process_IP(output_file,output_file)
         dbglog('- File ' + input_file + ' processed')
     stdlog('Anonymizng finished ')
-        
+
 
 
 if __name__ == "__main__":
