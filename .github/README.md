@@ -11,9 +11,9 @@ Usefull when you need some confidentiality before sending log to support.
 
 ## ⚠️ Disclamer 
 
-⚠️ UNDER CONSTRUCTION ⚠️
-
 This script is still as an early stage of development. ⛔️ DO NOT USE.
+
+⚠️ UNDER CONSTRUCTION ⚠️
 
 ## ⚙️ Features
 
@@ -35,6 +35,11 @@ Veeam Log Anonymizer, anonymizes :
 coming soon
 
 ## 🚀 Usage 
+
+You need to files : 
+* patterns.json 
+* VeeamLogAnonymizer.py 
+  
 
 ```bash
 python3 VeeamLogAnonymizer.py --help
