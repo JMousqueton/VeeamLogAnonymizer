@@ -26,8 +26,6 @@ Veeam Log Anonymizer, anonymizes :
 - vCenter Username 
 - Domain
 - vCenter Server
-- vCenter Datacenter
-- vCenter Cluster
 - Email
 
 ## 💿 Installation
@@ -42,20 +40,20 @@ You need to files :
   
 
 ```bash
-python3 VeeamLogAnonymizer.py --help
+python3 VeeamLogAnonymizer.py -h
 
 .-.   .-.,---.  ,---.    .--.                   ,-.    .---.    ,--,              .--.  .-. .-. .---.  .-. .-..-.   .-.        ,-. _____  ,---.  ,---.    
  \ \ / / | .-'  | .-'   / /\ \ |\    /|         | |   / .-. ) .' .'              / /\ \ |  \| |/ .-. ) |  \| | \ \_/ )/|\    /||(|/___  / | .-'  | .-.\   
   \ V /  | `-.  | `-.  / /__\ \|(\  / |         | |   | | |(_)|  |  __          / /__\ \|   | || | |(_)|   | |  \   (_)|(\  / |(_)   / /) | `-.  | `-'/   
    ) /   | .-'  | .-'  |  __  |(_)\/  |         | |   | | | | \  \ ( _)         |  __  || |\  || | | | | |\  |   ) (   (_)\/  || |  / /(_)| .-'  |   (    
-  (_)    |  `--.|  `--.| |  |)|| \  / |         | `--.\ `-' /  \  `-) )         | |  |)|| | |)|\ `-' / | | |)|   | |   | \  / || | / /___ |  `--.| |\ \   
+   (_)   |  `--.|  `--.| |  |)|| \  / |         | `--.\ `-' /  \  `-) )         | |  |)|| | |)|\ `-' / | | |)|   | |   | \  / || | / /___ |  `--.| |\ \   
          /( __.'/( __.'|_|  (_)| |\/| |         |( __.')---'   )\____/          |_|  (_)/(  (_) )---'  /(  (_)  /(_|   | |\/| |`-'(_____/ /( __.'|_| \)\  
-        (__)   (__)            '-'  '-'         (_)   (_)     (__)                     (__)    (_)    (__)     (__)    '-'  '-'          (__) v 0.3  (__) 
+        (__)   (__)            '-'  '-'         (_)   (_)     (__)                     (__)    (_)    (__)     (__)    '-'  '-'          (__) v 0.5  (__) 
     by Julien Mousqueton (@JMousqueton)
     
-usage: VeeamLogAnonymizer.py [-h] [-i INPUT_FILE] [-d INPUT_DIRECTORY] -o OUTPUT_DIRECTORY [--force]
+usage: VeeamLogAnonymizer.py [-h] [-i INPUT_FILE] [-d INPUT_DIRECTORY] -o OUTPUT_DIRECTORY [-f] [-u]
 
-Replace server names in log files within a directory or an individual log file with random strings.
+Anonymize your Veeam Backup & Replication logs.
 
 options:
   -h, --help            show this help message and exit
@@ -65,8 +63,14 @@ options:
                         Input directory containing log files
   -o OUTPUT_DIRECTORY, --output OUTPUT_DIRECTORY
                         Output directory for processed log files
-  --force               Force overwrite if output files exist or force the creation of output directory
+  -f, --force           Force overwrite if output files exist or force the creation of output directory if not exists
+  -u, --users           Display the users mapping table
   ```
+
+### Examples 
+
+`python3 VeeamLogAnonymizer.py -d ./log -o ./anonymized -f`
+`pyhton3 VeeamLogAnonymizer.py -i ./log/VeeamBackupManager.log -o ./anonymized`
 
 ## Author
 

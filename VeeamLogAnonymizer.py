@@ -3,7 +3,7 @@
 
 __author__ = "Julien Mousqueton"
 __copyright__ = "Copyright 2023, Julien Mousqueton"
-__version__ = "0.5"
+__version__ = "0.8"
 
 # Import necessary modules
 import re
@@ -137,13 +137,23 @@ def find_pattern(pattern_key,log_file_path,):
         return f"An error occurred: {str(e)}"
 
 
+def extract_domain(email):
+    # Utilisation d'une expression régulière pour extraire le nom de domaine
+    match = re.search(r'@([\w.-]+)', email)
+    
+    # Si une correspondance est trouvée, renvoie le nom de domaine, sinon renvoie None
+    if match:
+        return match.group(1)
+    else:
+        return None
+
 def main():
     parser = argparse.ArgumentParser(description="Anonymize your Veeam Backup & Replication logs.")
     parser.add_argument("-i", "--input", dest="input_file", help="Input log file")
     parser.add_argument("-d", "--directory", dest="input_directory", help="Input directory containing log files")
     parser.add_argument("-o", "--output", dest="output_directory", required=True, help="Output directory for processed log files")
     parser.add_argument("-f", "--force", action="store_true", help="Force overwrite if output files exist or force the creation of output directory if not exists")
-    parser.add_argument("-u","--users", action="store_true", help="Display the user mapping table")
+    parser.add_argument("-u","--users", action="store_true", help="Display the users mapping table")
 
     if not os.path.exists('patterns.json'):
         errlog("Error: patterns.json not found.")
@@ -151,8 +161,11 @@ def main():
 
     args = parser.parse_args()
 
+    input_files=[]
+
+
     if args.input_file:
-        input_files = [args.input_file]
+        input_files.append(args.input_file)
     elif args.input_directory:
         input_directory = args.input_directory
         if not os.path.isdir(input_directory):
@@ -161,128 +174,182 @@ def main():
         if not os.path.exists(input_directory):
             errlog('Error: Input directory ' + input_directory + ' does not exist.')
             sys.exit(1)
-        input_files = [os.path.join(input_directory, filename) for filename in os.listdir(input_directory) if filename.endswith(".log")]
+         # Use os.walk to find all .log files recursively
+        for root, _, files in os.walk(input_directory):
+            for filename in files:
+                if filename.endswith(".log"):
+                    input_files.append(os.path.join(root, filename))
+
     else:
         errlog('Error: You must specify either -i or -d.')
         sys.exit(1)
         
     output_directory = args.output_directory
+
+    # Init list 
     VeeamServer = False
+    
     VeeamUserList = []
-    tmpUser_set = set()
-    Location = False
-    vCenterUser = False
-    Email = False
-    SMTPServer = False 
-    Domain = False
-    vCenter= False
-    Datacenter = False
-    Cluster = False
+    User_set = set()
+    
+    SMTPServerList = []
+    SMTPServer_set = set()
+    
+    vCenterList = []
+    vCenter_set = set()
+
+    DomainList = []
+    Domain_set = set()
+
+    LocationList = []
+    Location_set = set() 
+
+    EmailList = []
+    Email_set = set()
 
     stdlog('Collecting information')
     for input_file in input_files:
         filename = os.path.basename(input_file)
+        
         dbglog('*** ' +  filename)
+        
         output_file = os.path.join(output_directory, filename)
+        
         if os.path.exists(output_file) and not args.force:
             errlog(f'Error: Output file {output_file} already exists. Use -f or --force to overwrite.')
             sys.exit(1)
-    
-        if not SMTPServer:
-            try:
-                SMTPServer = str(find_pattern('SMTPServer',input_file)[0])
+        
+        ### SMTP 
+        SMTPServers = find_pattern('SMTPServer',input_file)
+        try:
+            for SMTPServer in SMTPServers:
+                if SMTPServer in SMTPServer_set:
+                    continue
+                SMTPServer_set.add(SMTPServer)
                 if is_fqdn(SMTPServer):
                     RandomSMTP = str(generate_random_string())
                 else:
                     RandomSMTP = anonymized_IPv4(SMTPServer)
+                element = (SMTPServer, RandomSMTP)
+                SMTPServerList.append(element)
+        except:
+            pass
+
+        if not VeeamServer:
+            try: 
+                VeeamServer = str(find_pattern('VeeamServer',input_file)[0])
+                RandomVeeamServer = str(generate_random_string())
             except:
                 pass
-        if not VeeamServer: 
-            VeeamServer = str(find_pattern('VeeamServer',input_file)[0])
-            RandomVeeamServer = str(generate_random_string())
+
+        ### Veeam User 
         VeeamUsers = find_pattern('VeeamUser',input_file)
         try: 
             for VeeamUser in VeeamUsers:
                 tmpUser = VeeamUser.split("\\")[1]
                 tmpRandom = str(generate_random_string())
-                if tmpUser in tmpUser_set:
+                if tmpUser in User_set:
                     continue
-                tmpUser_set.add(tmpUser)  # Add the unique tmpUser value to the set
+                User_set.add(tmpUser)  # Add the unique tmpUser value to the set
                 element = (tmpUser, tmpRandom)
                 VeeamUserList.append(element)
         except:
             pass
-        if not vCenterUser:
-            try:
-                vCenterUser = str(find_pattern('vCenterUser',input_file)[0])
-                if '@' in vCenterUser:
-                    RandomvCenterUser = str(generate_random_string())+'@'+ str(generate_random_string())
-                else:
-                    RandomvCenterUser = str(generate_random_string())
-            except:
-                pass
-        if not Location:
-            try:
-                Location = str(find_pattern('vCenter',input_file)[0])
-                RandomvCenter = str(generate_random_string())
-                vCenter = str(get_object_from_location(Location)[0])
+        
+        ### vCenter Server 
+        vCenters = find_pattern('vCenter',input_file)
+        try: 
+            for vCenter in vCenters:
+                if len(vCenter) == 0:
+                    continue 
                 if is_fqdn(vCenter):
                     RandomDomain = str(generate_random_string())
+                    
                     Domain = '.'.join(get_element_from_fqdn(vCenter)[1:])
+                    if Domain not in Domain_set:
+                        Domain_set.add(Domain)
+                        element = (Domain, RandomDomain)
+                        DomainList.append(element)
                     vCenter = get_element_from_fqdn(vCenter)[0]
-                Datacenter = str(get_object_from_location(Location)[1])
-                RandomDatacenter= str(generate_random_string())
-                if len(Location) > 3:
-                    Cluster = str(get_object_from_location(Location)[2])
-                    RandomCluster = str(generate_random_string())
-            except:
-                pass
-        if not Email:
-            try:
-                Email = str(find_pattern('Email',input_file)[0])
-                RandomEmail= str(generate_random_string()) + '@' + str(generate_random_string())
-            except:
-                pass
-    
+                    RandomvCenter = str(generate_random_string())
+                else:
+                    RandomvCenter= anonymized_IPv4(SMTPServer)
+                if vCenter in vCenter_set:
+                    continue
+                vCenter_set.add(vCenter)  # Add the unique tmpUser value to the set
+                element = (vCenter, RandomvCenter)
+                vCenterList.append(element)              
+        except:
+            pass
+
+
+        ### Location 
+        #Locations = find_pattern('Location', input_file)
+        #try: 
+        #    for Location in Locations:
+        #        print('**** '+ Location + ' --> ' + input_file)
+        #except:
+        #   pass
+
+        ### email 
+        Emails = find_pattern('Email', input_file)
+        try: 
+            for Email in Emails:
+                RandomEmail = str(generate_random_string())
+                Domain = extract_domain(Email)
+                if Domain and Domain not in Domain_set:
+                        Domain_set.add(Domain)
+                        RandomDomain = str(generate_random_string())
+                        element = (Domain, RandomDomain)
+                        DomainList.append(element)
+                RandomEmail = RandomEmail + '@' + RandomDomain
+                element = (Email, RandomEmail)
+                EmailList.append(element)
+        except:
+           pass
 
     # Clean list 
-    UniqueVeeamUsers =list(set(VeeamUserList))
-
-
+    UniqueVeeamUsers = list(set(VeeamUserList))
+    UniqueSMTPSevers = list(set(SMTPServerList))
+    UniquevCenters   = list(set(vCenterList))
+    UniqueDomains    = list(set(DomainList))
+    UniqueEmail      = list(set(EmailList))
+    
     # Show the mapping 
     ## VEEAM
     try:
         stdlog('* Veeam Server : ' + VeeamServer + ' -> ' + RandomVeeamServer)
     except: 
         pass
+    
+    ### SMTP
     try:
-        stdlog('* Domain : ' + Domain + ' -> ' +  RandomDomain)
+        for SMTPServer in UniqueSMTPSevers:
+            _OriginalSMTP, _RandomSMTP = SMTPServer
+            stdlog('* SMTP Server : ' + _OriginalSMTP + ' -> ' + _RandomSMTP)
     except: 
         pass
+    
+    ### vCenter 
     try:
-        stdlog('* SMTP Server : ' + SMTPServer + ' -> ' + RandomSMTP)
+        for vCenter in UniquevCenters:
+            _Original, _Random = vCenter
+            stdlog('* vCenter Server : ' + _Original + ' -> ' + _Random)
     except: 
         pass
+
     try:
-        stdlog('* Email : ' + Email + ' -> ' + RandomEmail)
+        for Domain in UniqueDomains:
+            _Original, _Random = Domain
+            stdlog('* Domain : ' + _Original + ' -> ' + _Random)
     except: 
         pass
+   
     try:
-        ## VMWARE
-        stdlog('* vCenter : '+ vCenter + ' -> ' +  RandomvCenter) 
-    except: 
-        pass
-    try:   
-        stdlog('* vCenter User : ' + vCenterUser + ' -> ' + RandomvCenterUser)
-    except: 
-        pass
-    try:
-        stdlog('* Datacenter : ' + Datacenter + ' -> ' + RandomDatacenter)
-    except: 
-        pass
-    try:
-        stdlog('* Cluster : ' + Cluster + ' -> ' + RandomCluster)
-    except: 
+        for Email in UniqueEmail:
+            _Original, _Random = Email
+            stdlog('* Email : ' + _Original + ' -> ' + _Random)
+    except:
         pass
 
 
@@ -296,60 +363,80 @@ def main():
         except: 
             pass
         stdlog('****')
-    
 
+    sys.exit(1)
     stdlog('Processing anonymizing ... ')
     for input_file in input_files:
         filename = os.path.basename(input_file)
-        output_file = os.path.join(output_directory, filename)
+        if args.input_file:
+            output_file = os.path.join(output_directory, filename)
+        else:
+            output_file = input_file.replace(args.input_directory,args.output_directory,1)
+            full_output_directory = os.path.dirname(output_file)
 
-        if not os.path.exists(output_directory) and args.force:
-            os.makedirs(output_directory)  
+        if not os.path.exists(full_output_directory) and args.force:
+            os.makedirs(full_output_directory)  
+        
         file_size_bytes = os.path.getsize(input_file)
         file_size_megabytes = round(file_size_bytes / (1024 * 1024),2)
-        stdlog('- Processing file  '+ filename + '(' + str(file_size_megabytes)+ ' Mb)')
+        stdlog('- Processing file  '+ input_file + '(' + str(file_size_megabytes)+ ' Mb)')
+        
         try:
             shutil.copy(input_file, output_file)
         except:
             errlog('Fatal Error processing ...')
             sys.exit(1)
-        if vCenterUser:
-            replace_string_in_file(output_file,output_file, vCenterUser, RandomvCenterUser)
-            dbglog('    + anonymizing username')
-        if Email: 
-            replace_string_in_file(output_file, output_file, Email, RandomEmail)
-            dbglog('    + anonymizing email address')
-        if Domain: 
-            replace_string_in_file(output_file, output_file, Domain, RandomDomain)
-            dbglog('    + anonymizing domain name')
-        if VeeamServer: 
-            replace_string_in_file(output_file, output_file, VeeamServer, RandomVeeamServer)
-            dbglog('    + anonymizing VeeamServer')
-        if len(UniqueVeeamUsers) > 0: 
+
+        try:
+            replace_string_in_file(output_file,output_file, VeeamServer, RandomVeeamServer)
+        except: 
+            pass
+
+        try:
+            for Domain in UniqueDomains:
+                _Original, _Random = Domain
+                dbglog('    + anonymizing Domain')
+                replace_string_in_file(output_file,output_file, _Original, _Random)
+        except: 
+            pass
+    
+        try:
+            for SMTPServer in UniqueSMTPSevers:
+                _Original, _Random = SMTPServer
+                dbglog('    + anonymizing SMTPServer')
+                replace_string_in_file(output_file,output_file, _Original, _Random)
+        except: 
+            pass
+
+        try:
+            for vCenter in UniquevCenters:
+                _Original, _Random = vCenter
+                dbglog('    + anonymizing vCenter')
+                replace_string_in_file(output_file,output_file, _Original, _Random)
+        except: 
+            pass
+    
+        try:
             for VeeamUser in UniqueVeeamUsers:
-                _OriginalUser, _RandomUser = VeeamUser
-                replace_string_in_file(output_file, output_file, _OriginalUser, _RandomUser)
-                dbglog('    + anonymizing Veeam Users')
-        if SMTPServer:
-            replace_string_in_file(output_file, output_file, SMTPServer, RandomSMTP)
-            dbglog('    + anonymizing SMTP Server')
-        if vCenter: 
-            replace_string_in_file(output_file, output_file, vCenter, RandomvCenter)
-            dbglog('    + anonymizing vCenter Server')
-        if Datacenter: 
-            replace_string_in_file(output_file, output_file, Datacenter, RandomDatacenter)
-            dbglog('    + anonymizing vCenter Datacenter')
-        if Cluster: 
-            # For Cluster 
-            replace_string_in_file(output_file, output_file, Cluster, RandomCluster)
-            dbglog('    + anonymizing vCenter Clusster')
+                _Original, _Random = VeeamUser
+                dbglog('    + anonymizing VeeamUser')
+                replace_string_in_file(output_file,output_file, _Original, _Random)
+        except: 
+            pass
+
+        try:
+            for Email in UniqueEmail:
+                _Original, _Random = Email
+                dbglog('    + anonymizing Email')
+                replace_string_in_file(output_file,output_file, _Original, _Random)
+        except:
+            pass
+
         # For IPs
         dbglog('    + anonymizing IP Address')
         process_IP(output_file,output_file)
         dbglog('- File ' + input_file + ' processed')
     stdlog('Anonymizng finished ')
-
-
 
 if __name__ == "__main__":
     print(

@@ -1,8 +1,9 @@
 {
     "VeeamServer": "HostName:\\s*\\[([^\\]]+)\\]",
-    "vCenter": "Location:\\s*\\[(.*?)\\]",
-    "SMTPServer": "'SMTP Server '(.*?)'",
-    "vCenterUser": "UserName: '([^']+)\\'",
-    "Email": "(?<=Sending report to\\s)([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,7}\\b)",
-    "VeeamUser": "Log has been started by '(.*?)'"
+    "Location": "Location:\\s*\\[(.*?)\\]",
+    "SMTPServer": "SMTP Server '(.*?)'",
+    "vCenterUser": "UserName: '([^']+)'",
+    "Email": "Sending report to\\s([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,7}\\b)",
+    "VeeamUser": "Log has been started by '(.*?)'",
+    "vCenter": "HostNameOrIpAddress: '(.*?)'"
 }
