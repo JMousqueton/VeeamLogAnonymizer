@@ -101,13 +101,17 @@ def process_IP(input_file, output_file):
 
     # Replace the first two numbers with "*"
     for ip in ip_addresses:
-        content = content.replace(ip, anonymized_IPv4(ip))
+        # Exception for VMware vSphere version 
+        if not ip.startswith(('7.', '8.')):
+            content = content.replace(ip, anonymized_IPv4(ip))
 
     ### another pattern :( 
     ip_pattern = r'\[::ffff:([\d.]+)\]'
     ip_addresses = re.findall(ip_pattern, content)
     for ip in ip_addresses:
-        content = content.replace(ip, anonymized_IPv4(ip))
+        # Exception for VMware vSphere version 
+        if not ip.startswith(('7.', '8.')):
+            content = content.replace(ip, anonymized_IPv4(ip))
     # Write the modified content back to the file
     with open(output_file, 'w') as file:
         file.write(content)
@@ -442,7 +446,7 @@ def main():
     elapsed_time = end_time - start_time
     minutes = str(int(elapsed_time // 60))
     seconds = str(int(elapsed_time % 60))
-    stdlog('Anonymizng finished in ' + minutes + 'minutes and ' + seconds + ' seconds')
+    stdlog('Anonymizng finished in ' + minutes + '  minutes and ' + seconds + ' seconds')
 
 if __name__ == "__main__":
     start_time = time.time()
