@@ -101,18 +101,17 @@ def process_IP(input_file, output_file):
 
     # Replace the first two numbers with "*"
     for ip in ip_addresses:
-        #masked_ip = re.sub(r'(\d{1,3}\.\d{1,3})', r'**.**', ip)
-        #ip_address = ip.split(".")
-        #ip_address[0] = "**"
-        #ip_address[1] = "**"
-        #masked_ip = ".".join(ip_address)
         content = content.replace(ip, anonymized_IPv4(ip))
 
+    ### another pattern :( 
+    ip_pattern = r'\[::ffff:([\d.]+)\]'
+    ip_addresses = re.findall(ip_pattern, content)
+    for ip in ip_addresses:
+        content = content.replace(ip, anonymized_IPv4(ip))
     # Write the modified content back to the file
     with open(output_file, 'w') as file:
         file.write(content)
     
-
 def find_pattern(pattern_key,log_file_path,):
     try:
         with open("patterns.json", "r") as patterns_file:
@@ -441,8 +440,8 @@ def main():
         dbglog('- File ' + input_file + ' processed')
     end_time = time.time()
     elapsed_time = end_time - start_time
-    minutes = int(elapsed_time // 60)
-    seconds = int(elapsed_time % 60)
+    minutes = str(int(elapsed_time // 60))
+    seconds = str(int(elapsed_time % 60))
     stdlog('Anonymizng finished in ' + minutes + 'minutes and ' + seconds + ' seconds')
 
 if __name__ == "__main__":
