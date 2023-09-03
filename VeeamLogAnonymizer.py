@@ -15,6 +15,7 @@ import argparse
 import logging
 import json
 import shutil
+import time
 
 # Configure logging
 logging.basicConfig(
@@ -154,6 +155,7 @@ def main():
     parser.add_argument("-o", "--output", dest="output_directory", required=True, help="Output directory for processed log files")
     parser.add_argument("-f", "--force", action="store_true", help="Force overwrite if output files exist or force the creation of output directory if not exists")
     parser.add_argument("-u","--users", action="store_true", help="Display the users mapping table")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Display processing files and other information")
 
     if not os.path.exists('patterns.json'):
         errlog("Error: patterns.json not found.")
@@ -163,6 +165,7 @@ def main():
 
     input_files=[]
 
+    verbose = args.verbose 
 
     if args.input_file:
         input_files.append(args.input_file)
@@ -364,7 +367,6 @@ def main():
             pass
         stdlog('****')
 
-    sys.exit(1)
     stdlog('Processing anonymizing ... ')
     for input_file in input_files:
         filename = os.path.basename(input_file)
@@ -377,9 +379,10 @@ def main():
         if not os.path.exists(full_output_directory) and args.force:
             os.makedirs(full_output_directory)  
         
-        file_size_bytes = os.path.getsize(input_file)
-        file_size_megabytes = round(file_size_bytes / (1024 * 1024),2)
-        stdlog('- Processing file  '+ input_file + '(' + str(file_size_megabytes)+ ' Mb)')
+        if verbose:
+            file_size_bytes = os.path.getsize(input_file)
+            file_size_megabytes = round(file_size_bytes / (1024 * 1024),2)
+            stdlog('- Processing file  '+ input_file + '(' + str(file_size_megabytes)+ ' Mb)')
         
         try:
             shutil.copy(input_file, output_file)
@@ -436,9 +439,14 @@ def main():
         dbglog('    + anonymizing IP Address')
         process_IP(output_file,output_file)
         dbglog('- File ' + input_file + ' processed')
-    stdlog('Anonymizng finished ')
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    minutes = int(elapsed_time // 60)
+    seconds = int(elapsed_time % 60)
+    stdlog('Anonymizng finished in ' + minutes + 'minutes and ' + seconds + ' seconds')
 
 if __name__ == "__main__":
+    start_time = time.time()
     print(
     f'''
 .-.   .-.,---.  ,---.    .--.                   ,-.    .---.    ,--,              .--.  .-. .-. .---.  .-. .-..-.   .-.        ,-. _____  ,---.  ,---.    
