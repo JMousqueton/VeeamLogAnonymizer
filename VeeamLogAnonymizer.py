@@ -212,9 +212,12 @@ def main():
 
     EmailList = []
     Email_set = set()
+    
+    nbfile = 0
 
     stdlog('Collecting information')
     for input_file in input_files:
+        nbfile += 1
         filename = os.path.basename(input_file)
         
         dbglog('*** ' +  filename)
@@ -369,8 +372,8 @@ def main():
         except: 
             pass
         stdlog('****')
-
-    stdlog('Processing anonymizing ... ')
+    i = 0 
+    stdlog('Processing anonymizing of ' + str(nbfile) + ' file(s) ... ')
     for input_file in input_files:
         filename = os.path.basename(input_file)
         if args.input_file:
@@ -383,9 +386,10 @@ def main():
             os.makedirs(full_output_directory)  
         
         if verbose:
+            i +=  1
             file_size_bytes = os.path.getsize(input_file)
             file_size_megabytes = round(file_size_bytes / (1024 * 1024),2)
-            stdlog('- Processing file  '+ input_file + '(' + str(file_size_megabytes)+ ' Mb)')
+            stdlog('- Processing file ['+ str(i) + '/' + str(nbfile) + '] '+ input_file + '(' + str(file_size_megabytes)+ ' Mb)')
         
         try:
             shutil.copy(input_file, output_file)
