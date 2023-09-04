@@ -157,7 +157,7 @@ def main():
     parser.add_argument("-d", "--directory", dest="input_directory", help="Input directory containing log files")
     parser.add_argument("-o", "--output", dest="output_directory", required=True, help="Output directory for processed log files")
     parser.add_argument("-f", "--force", action="store_true", help="Force overwrite if output files exist or force the creation of output directory if not exists")
-    parser.add_argument("-u","--users", action="store_true", help="Display the users mapping table")
+    parser.add_argument("-m","--mapping", action="store_true", help="Display the mapping table")
     parser.add_argument("-v", "--verbose", action="store_true", help="Display processing files and other information")
 
     if not os.path.exists('patterns.json'):
@@ -324,54 +324,57 @@ def main():
     UniqueDomains    = list(set(DomainList))
     UniqueEmail      = list(set(EmailList))
     
-    # Show the mapping 
-    ## VEEAM
-    try:
-        stdlog('* Veeam Server : ' + VeeamServer + ' -> ' + RandomVeeamServer)
-    except: 
-        pass
-    
-    ### SMTP
-    try:
-        for SMTPServer in UniqueSMTPSevers:
-            _OriginalSMTP, _RandomSMTP = SMTPServer
-            stdlog('* SMTP Server : ' + _OriginalSMTP + ' -> ' + _RandomSMTP)
-    except: 
-        pass
-    
-    ### vCenter 
-    try:
-        for vCenter in UniquevCenters:
-            _Original, _Random = vCenter
-            stdlog('* vCenter Server : ' + _Original + ' -> ' + _Random)
-    except: 
-        pass
-
-    try:
-        for Domain in UniqueDomains:
-            _Original, _Random = Domain
-            stdlog('* Domain : ' + _Original + ' -> ' + _Random)
-    except: 
-        pass
-   
-    try:
-        for Email in UniqueEmail:
-            _Original, _Random = Email
-            stdlog('* Email : ' + _Original + ' -> ' + _Random)
-    except:
-        pass
-
-
-    if args.users:
-        stdlog("**** ")
-        stdlog("User Mapping Table :")
+    if args.mapping:
+        # Show the mapping 
+        ## VEEAM
         try:
-            for VeeamUser in UniqueVeeamUsers:
-                _OriginalUser, _RandomUser = VeeamUser
-                stdlog( _OriginalUser + ' -> ' + _RandomUser)
+            stdlog('* Veeam Server : ' + VeeamServer + ' -> ' + RandomVeeamServer)
         except: 
             pass
-        stdlog('****')
+        
+        ### SMTP
+        try:
+            for SMTPServer in UniqueSMTPSevers:
+                _OriginalSMTP, _RandomSMTP = SMTPServer
+                stdlog('* SMTP Server : ' + _OriginalSMTP + ' -> ' + _RandomSMTP)
+        except: 
+            pass
+        
+        ### vCenter 
+        try:
+            for vCenter in UniquevCenters:
+                _Original, _Random = vCenter
+                stdlog('* vCenter Server : ' + _Original + ' -> ' + _Random)
+        except: 
+            pass
+
+        ### Domain 
+        try:
+            for Domain in UniqueDomains:
+                _Original, _Random = Domain
+                stdlog('* Domain : ' + _Original + ' -> ' + _Random)
+        except: 
+            pass
+        ### Email 
+        try:
+            for Email in UniqueEmail:
+                _Original, _Random = Email
+                stdlog('* Email : ' + _Original + ' -> ' + _Random)
+        except:
+            pass
+        
+        ### Veeam User Accounts 
+        try:
+            for VeeamUser in UniqueVeeamUsers:
+                _Original, _Random = VeeamUser
+                stdlog(' * User: ' + _Original + ' -> ' + _Random)
+        except: 
+            pass
+    
+    ###
+    # Anonymizing 
+    ###
+
     i = 0 
     stdlog('Processing anonymizing of ' + str(nbfile) + ' file(s) ... ')
     for input_file in input_files:
