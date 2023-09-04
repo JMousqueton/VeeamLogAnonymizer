@@ -125,7 +125,7 @@ def find_pattern(pattern_key,log_file_path,):
         if not pattern:
             return f"Pattern key '{pattern_key}' not found in patterns.json."
 
-        with open(log_file_path, "r") as log_file:
+        with open(log_file_path, "r", encoding='utf-8', errors='ignore') as log_file:
             log_content = log_file.read()
 
         matches = re.findall(pattern, log_content)
@@ -273,7 +273,6 @@ def main():
                     continue 
                 if is_fqdn(vCenter):
                     RandomDomain = str(generate_random_string())
-                    
                     Domain = '.'.join(get_element_from_fqdn(vCenter)[1:])
                     if Domain not in Domain_set:
                         Domain_set.add(Domain)
@@ -311,6 +310,9 @@ def main():
                         RandomDomain = str(generate_random_string())
                         element = (Domain, RandomDomain)
                         DomainList.append(element)
+                if Email in Email_set:
+                    continue 
+                Email_set.add(Email)
                 RandomEmail = RandomEmail + '@' + RandomDomain
                 element = (Email, RandomEmail)
                 EmailList.append(element)
@@ -322,7 +324,7 @@ def main():
     UniqueSMTPSevers = list(set(SMTPServerList))
     UniquevCenters   = list(set(vCenterList))
     UniqueDomains    = list(set(DomainList))
-    UniqueEmail      = list(set(EmailList))
+    UniqueEmails     = list(set(EmailList))
     
     if args.mapping:
         # Show the mapping 
@@ -357,7 +359,7 @@ def main():
             pass
         ### Email 
         try:
-            for Email in UniqueEmail:
+            for Email in UniqueEmails:
                 _Original, _Random = Email
                 stdlog('* Email : ' + _Original + ' -> ' + _Random)
         except:
@@ -367,10 +369,10 @@ def main():
         try:
             for VeeamUser in UniqueVeeamUsers:
                 _Original, _Random = VeeamUser
-                stdlog(' * User: ' + _Original + ' -> ' + _Random)
+                stdlog('* User: ' + _Original + ' -> ' + _Random)
         except: 
             pass
-    
+        
     ###
     # Anonymizing 
     ###
