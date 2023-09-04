@@ -440,7 +440,7 @@ def main():
             pass
 
         try:
-            for Email in UniqueEmail:
+            for Email in UniqueEmails:
                 _Original, _Random = Email
                 dbglog('    + anonymizing Email')
                 replace_string_in_file(output_file,output_file, _Original, _Random)
