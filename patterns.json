@@ -3,6 +3,7 @@
     "Location": "Location:\\s*\\[(.*?)\\]",
     "SMTPServer": "SMTP Server '(.*?)'",
     "vCenterUser": "UserName: '([^']+)'",
+    "ESXiServer": "Target host: \\[([^\\]]+)\\]",
     "Email": "Sending report to\\s([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,7}\\b)",
     "VeeamUser": "Log has been started by '(.*?)'",
     "vCenter": "HostNameOrIpAddress: '(.*?)'"

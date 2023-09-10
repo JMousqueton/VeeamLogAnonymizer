@@ -71,6 +71,7 @@ def is_fqdn(string):
         return True
     else:
         return False
+    
 def is_IP(string):
     # Regular expression patterns to match  IP addresses
     ip_pattern = r'^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$'
@@ -213,6 +214,9 @@ def main():
     EmailList = []
     Email_set = set()
     
+    ESXiList = []
+    ESXi_set = set()
+
     nbfile = 0
 
     stdlog('Collecting information')
@@ -281,7 +285,7 @@ def main():
                     vCenter = get_element_from_fqdn(vCenter)[0]
                     RandomvCenter = str(generate_random_string())
                 else:
-                    RandomvCenter= anonymized_IPv4(SMTPServer)
+                    RandomvCenter= anonymized_IPv4(vCenter)
                 if vCenter in vCenter_set:
                     continue
                 vCenter_set.add(vCenter)  # Add the unique tmpUser value to the set
@@ -298,6 +302,29 @@ def main():
         #        print('**** '+ Location + ' --> ' + input_file)
         #except:
         #   pass
+
+        #ESXi Server 
+        ESXiServers = find_pattern('ESXiServer',input_file)
+        try:
+            for ESXi in ESXiServers:
+                if is_fqdn(ESXi):
+                    RandomDomain = str(generate_random_string())
+                    Domain = '.'.join(get_element_from_fqdn(ESXi)[1:])
+                    if Domain not in Domain_set:
+                        Domain_set.add(Domain)
+                        element = (Domain, RandomDomain)
+                        DomainList.append(element)
+                    ESXi = get_element_from_fqdn(ESXi)[0]
+                    RandomESXi = str(generate_random_string())
+                else:
+                    RandomESXi = anonymized_IPv4(ESXi)
+                if ESXi in ESXi_set:
+                    continue
+                ESXi_set.add(ESXi)
+                element = (ESXi, RandomESXi)
+                ESXiList.append(element) 
+        except:
+            pass
 
         ### email 
         Emails = find_pattern('Email', input_file)
@@ -320,11 +347,12 @@ def main():
            pass
 
     # Clean list 
-    UniqueVeeamUsers = list(set(VeeamUserList))
+    UniqueVeeamUsers = list(sorted(set(VeeamUserList)))
     UniqueSMTPSevers = list(set(SMTPServerList))
-    UniquevCenters   = list(set(vCenterList))
+    UniquevCenters   = list(sorted(set(vCenterList)))
     UniqueDomains    = list(set(DomainList))
     UniqueEmails     = list(set(EmailList))
+    UniqueESXi       = list(sorted(set(ESXiList)))
     
     if args.mapping:
         # Show the mapping 
@@ -372,6 +400,14 @@ def main():
                 stdlog('* User: ' + _Original + ' -> ' + _Random)
         except: 
             pass
+
+        ### ESXi
+        try:
+            for ESXi in UniqueESXi:
+                _Original, _Random = ESXi
+                stdlog('* ESXi: ' + _Original + ' -> ' + _Random)
+        except:
+            pass                
         
     ###
     # Anonymizing 
