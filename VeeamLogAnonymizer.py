@@ -403,17 +403,26 @@ def main():
 
         ### ESXi
         try:
+            print('---> ' +  str(len(UniqueESXi)))
             for ESXi in UniqueESXi:
                 _Original, _Random = ESXi
-                stdlog('* ESXi: ' + _Original + ' -> ' + _Random)
+                for vCenter in vCenter_set:
+                    if _Original == vCenter:
+                        element = (_Original, _Random)
+                        ESXiList.remove(element)
+                    else:
+                        stdlog('* ESXi: ' + _Original + ' -> ' + _Random)
         except:
-            pass                
+            pass  
+       
         
     ###
     # Anonymizing 
     ###
 
     i = 0 
+    UniqueESXi = list(sorted(set(ESXiList)))
+    print('---> ' +  str(len(UniqueESXi)))
     stdlog('Processing anonymizing of ' + str(nbfile) + ' file(s) ... ')
     for input_file in input_files:
         filename = os.path.basename(input_file)
