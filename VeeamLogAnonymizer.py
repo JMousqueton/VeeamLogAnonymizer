@@ -350,9 +350,26 @@ def main():
     UniqueVeeamUsers = list(sorted(set(VeeamUserList)))
     UniqueSMTPSevers = list(set(SMTPServerList))
     UniquevCenters   = list(sorted(set(vCenterList)))
-    UniqueDomains    = list(set(DomainList))
     UniqueEmails     = list(set(EmailList))
     UniqueESXi       = list(sorted(set(ESXiList)))
+
+    ### GET Domain and subdomain 
+    try:
+        for Domain in DomainList:
+            _Original, _Random = Domain
+            parts = _Original.split('.')
+            if len(parts) > 2:
+                main_domain = '.'.join(parts[-2:])
+                if main_domain not in Domain_set:
+                        Domain_set.add(main_domain)
+                        RandomDomain = str(generate_random_string())
+                        element = (main_domain, RandomDomain)
+                        DomainList.append(element)
+    except:
+        pass
+
+    UniqueDomains    = list(set(DomainList))
+
     
     if args.mapping:
         # Show the mapping 
