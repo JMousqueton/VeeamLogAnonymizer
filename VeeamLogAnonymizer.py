@@ -3,7 +3,7 @@
 
 __author__ = "Julien Mousqueton"
 __copyright__ = "Copyright 2023, Julien Mousqueton"
-__version__ = "1.0"
+__version__ = "1.1"
 
 # Import necessary modules
 import re
@@ -274,6 +274,11 @@ def main():
                 SMTPServer_set.add(SMTPServer)
                 if is_fqdn(SMTPServer):
                     RandomSMTP = str(generate_random_string())
+                    Domain = '.'.join(get_element_from_fqdn(SMTPServer)[1:])
+                    if Domain not in Domain_set:
+                        Domain_set.add(Domain)
+                        element = (Domain, RandomDomain)
+                        DomainList.append(element)
                 else:
                     RandomSMTP = anonymized_IPv4(SMTPServer)
                 element = (SMTPServer, RandomSMTP)
@@ -411,7 +416,21 @@ def main():
 
     UniqueDomains    = list(set(DomainList))
 
+
+    ## Cleaning ESXi 
+    try:
+            
+        for ESXi in UniqueESXi:
+            _Original, _Random = ESXi
+            for vCenter in vCenter_set:
+                if _Original == vCenter:
+                  ESXiList.remove(ESXi)                
+    except:
+        pass  
+
     if args.dictionary: 
+        if not os.path.exists(output_directory) and args.force:
+            os.makedirs(output_directory)  
         current_datetime = datetime.datetime.now()
         formatted_datetime = current_datetime.strftime("%Y-%m-%d_%H-%M-%S")
         filename = f"VeeamAnonymizer-{formatted_datetime}.json"
@@ -467,7 +486,7 @@ def main():
         # Location 
         try:
             for Location in UniqueLocation:
-                _Original, _Random = Domain
+                _Original, _Random = Location
                 stdlog('* vCenter Location : ' + _Original + ' -> ' + _Random)
         except: 
             pass
@@ -514,6 +533,7 @@ def main():
 
     i = 0 
     UniqueESXi = list(sorted(set(ESXiList)))
+    
     stdlog('Processing anonymizing of ' + str(nbfile) + ' file(s) ... ')
     for input_file in input_files:
         filename = os.path.basename(input_file)
@@ -582,6 +602,14 @@ def main():
                 replace_string_in_file(output_file,output_file, _Original, _Random)
         except:
             pass
+
+        try:
+            for Location in UniqueLocation:
+                _Original, _Random = Location
+                dbglog('    + anonymizing Location')
+                replace_string_in_file(output_file,output_file, _Original, _Random)
+        except:
+            pass   
 
         # For IPs
         dbglog('    + anonymizing IP Address')
