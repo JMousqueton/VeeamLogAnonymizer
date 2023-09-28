@@ -164,3 +164,4 @@ cython_debug/
 #.idea/
 .DS_Store
 log.OLD/BK_VMware_RepExagrid_01.html
+*/VeeamAnonymizer-*.json

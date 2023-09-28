@@ -3,7 +3,7 @@
 
 __author__ = "Julien Mousqueton"
 __copyright__ = "Copyright 2023, Julien Mousqueton"
-__version__ = "0.8"
+__version__ = "1.0"
 
 # Import necessary modules
 import re
@@ -16,6 +16,8 @@ import logging
 import json
 import shutil
 import time
+import datetime
+
 
 # Configure logging
 logging.basicConfig(
@@ -151,6 +153,36 @@ def extract_domain(email):
         return match.group(1)
     else:
         return None
+    
+
+def update_json_file(object_name, name_of_value, value, output_file):
+    # Try to read the existing JSON data if the file exists
+    try:
+        with open(output_file, 'r') as json_file:
+            existing_data = json.load(json_file)
+    except FileNotFoundError:
+        # pass  # If the file doesn't exist, ignore the error
+        existing_data = {}
+
+    # Update the existing data or create a new entry
+    if object_name in existing_data:
+        # Check if the name_of_value already exists in the list
+        found = False
+        for item in existing_data[object_name]:
+            if name_of_value in item:
+                item[name_of_value] = str(value)  # Update the existing value
+                found = True
+                break
+        if not found:
+            existing_data[object_name].append({name_of_value: str(value)})  # Add a new entry
+    else:
+        existing_data[object_name] = [{name_of_value: str(value)}]
+
+    # Write the updated data to the file
+    with open(output_file, 'w') as json_file:
+        json.dump(existing_data, json_file, indent=4)
+
+
 
 def main():
     parser = argparse.ArgumentParser(description="Anonymize your Veeam Backup & Replication logs.")
@@ -158,8 +190,9 @@ def main():
     parser.add_argument("-d", "--directory", dest="input_directory", help="Input directory containing log files")
     parser.add_argument("-o", "--output", dest="output_directory", required=True, help="Output directory for processed log files")
     parser.add_argument("-f", "--force", action="store_true", help="Force overwrite if output files exist or force the creation of output directory if not exists")
-    parser.add_argument("-m","--mapping", action="store_true", help="Display the mapping table")
+    parser.add_argument("-m","--mapping", action="store_true", help="Display the mapping table of anonymized data")
     parser.add_argument("-v", "--verbose", action="store_true", help="Display processing files and other information")
+    parser.add_argument("-D", "--dictionary", action="store_true", help="output a JSON file with the dictionary of anonymized data")
 
     if not os.path.exists('patterns.json'):
         errlog("Error: patterns.json not found.")
@@ -296,12 +329,19 @@ def main():
 
 
         ### Location 
-        #Locations = find_pattern('Location', input_file)
-        #try: 
-        #    for Location in Locations:
-        #        print('**** '+ Location + ' --> ' + input_file)
-        #except:
-        #   pass
+        Locations = find_pattern('Location', input_file)
+        try: 
+            for Location in Locations:
+                split_data = Location.split('\\')
+                # Print all parts except the first and last ones
+                for part in split_data[1:-1]:
+                    RandomLocation = str(generate_random_string())
+                    if part not in Location_set:
+                        Location_set.add(part)
+                        element = (part, RandomLocation)
+                        LocationList.append(element)                  
+        except:
+           pass
 
         #ESXi Server 
         ESXiServers = find_pattern('ESXiServer',input_file)
@@ -352,6 +392,7 @@ def main():
     UniquevCenters   = list(sorted(set(vCenterList)))
     UniqueEmails     = list(set(EmailList))
     UniqueESXi       = list(sorted(set(ESXiList)))
+    UniqueLocation   = list(sorted(set(LocationList)))
 
     ### GET Domain and subdomain 
     try:
@@ -370,7 +411,36 @@ def main():
 
     UniqueDomains    = list(set(DomainList))
 
-    
+    if args.dictionary: 
+        current_datetime = datetime.datetime.now()
+        formatted_datetime = current_datetime.strftime("%Y-%m-%d_%H-%M-%S")
+        filename = f"VeeamAnonymizer-{formatted_datetime}.json"
+        outputdictfile  = output_directory + "/" + filename
+        # Add a new entry to the "Vcenter" section
+        for data in UniqueVeeamUsers:
+                _Original, _Random = data
+                update_json_file("VeeamUsers", _Original, _Random, outputdictfile)
+        for data in UniqueSMTPSevers:
+                _Original, _Random = data
+                update_json_file("SMTP Servers", _Original, _Random, outputdictfile)
+        for data in UniquevCenters:
+                _Original, _Random = data
+                update_json_file("vCenter Servers", _Original, _Random, outputdictfile)
+        for data in UniqueLocation:
+                _Original, _Random = data
+                update_json_file("vCenter Location", _Original, _Random, outputdictfile)
+        for data in UniqueEmails:
+                _Original, _Random = data
+                update_json_file("Email address", _Original, _Random, outputdictfile)
+        for data in UniqueESXi:
+                _Original, _Random = data
+                update_json_file("ESXi hosts", _Original, _Random, outputdictfile)
+        for data in UniqueDomains:
+                _Original, _Random = data
+                update_json_file("Domain names", _Original, _Random, outputdictfile)
+        stdlog('Json file created')
+
+
     if args.mapping:
         # Show the mapping 
         ## VEEAM
@@ -394,7 +464,13 @@ def main():
                 stdlog('* vCenter Server : ' + _Original + ' -> ' + _Random)
         except: 
             pass
-
+        # Location 
+        try:
+            for Location in UniqueLocation:
+                _Original, _Random = Domain
+                stdlog('* vCenter Location : ' + _Original + ' -> ' + _Random)
+        except: 
+            pass
         ### Domain 
         try:
             for Domain in UniqueDomains:
