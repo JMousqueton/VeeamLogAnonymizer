@@ -99,8 +99,11 @@ options:
 ### Examples 
 
 `python3 VeeamLogAnonymizer.py -d ./log -o ./anonymized -f`
+
 `pyhton3 VeeamLogAnonymizer.py -i ./log/VeeamBackupManager.log -o ./anonymized`
+
 and full options :) 
+
 `python3 VeeamLogAnonymizer.py  -d ./log -o ./anonymized -f -m -v  -D     `
 
 ## Author
