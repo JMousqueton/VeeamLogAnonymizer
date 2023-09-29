@@ -22,10 +22,10 @@ Veeam Log Anonymizer, anonymizes :
 - Veeam Server name 
 - Usernames 
 - IPs address 
-- SMTP Server     
+- SMTP Servers     
 - vCenter Username 
-- Domain
-- vCenter Server
+- Domains
+- vCenter Servers
 - Email
 - vCenter Location
 
