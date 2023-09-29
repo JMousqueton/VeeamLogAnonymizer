@@ -431,16 +431,7 @@ def main():
 
 
     ## Cleaning ESXi 
-    try:
-            
-        for ESXi in UniqueESXi:
-            _Original, _Random = ESXi
-            for vCenter in vCenter_set:
-                if _Original == vCenter:
-                  ESXiList.remove(ESXi)                
-    except:
-        pass  
-
+    filtered_ESXi = [(original, random) for (original, random) in UniqueESXi if original not in {vc[0] for vc in UniquevCenters}]
     
     if args.dictionary: 
         if not os.path.exists(output_directory) and args.force:
@@ -465,7 +456,7 @@ def main():
         for data in UniqueEmails:
                 _Original, _Random = data
                 update_json_file("Email address", _Original, _Random, outputdictfile)
-        for data in UniqueESXi:
+        for data in filtered_ESXi: 
                 _Original, _Random = data
                 update_json_file("ESXi hosts", _Original, _Random, outputdictfile)
         for data in UniqueDomains:
@@ -529,14 +520,9 @@ def main():
 
         ### ESXi
         try:
-            for ESXi in UniqueESXi:
+            for ESXi in filtered_ESXi:
                 _Original, _Random = ESXi
-                for vCenter in vCenter_set:
-                    if _Original == vCenter:
-                        element = (_Original, _Random)
-                        ESXiList.remove(element)
-                    else:
-                        stdlog('* ESXi: ' + _Original + ' -> ' + _Random)
+                stdlog('* ESXi: ' + _Original + ' -> ' + _Random)
         except:
             pass  
        
@@ -546,7 +532,7 @@ def main():
     ###
 
     i = 0 
-    UniqueESXi = list(sorted(set(ESXiList)))
+    ##  UniqueESXi = list(sorted(set(ESXiList)))
     
     stdlog('Processing anonymizing of ' + str(nbfile) + ' file(s) ... ')
     for input_file in input_files:
@@ -576,6 +562,16 @@ def main():
             replace_string_in_file(output_file,output_file, VeeamServer, RandomVeeamServer)
         except: 
             pass
+
+
+        try: 
+            for ESXi in filtered_ESXi:
+                _Original, _Random = ESXi
+                dbglog('    + anonymizing ESXi')
+                replace_string_in_file(output_file,output_file, _Original, _Random)
+        except: 
+            pass
+
 
         try:
             for Domain in UniqueDomains:
