@@ -17,6 +17,7 @@ import json
 import shutil
 import time
 import datetime
+import glob
 
 
 # Configure logging
@@ -226,6 +227,18 @@ def main():
         
     output_directory = args.output_directory
 
+    # Specify the pattern to match files with a similar format
+    filename_pattern = 'VeeamAnonymizer-*.json'
+
+    # Create the full path pattern by joining the directory and filename pattern
+    file_pattern = os.path.join(output_directory, filename_pattern)
+    # Use glob to find files matching the pattern
+    matching_files = glob.glob(file_pattern)
+
+    # Check if any matching files were found
+    if matching_files:
+        stdlog("ATTENTION : An old VeeamAnonymizer dictionnary exist in the output directory")
+
     # Init list 
     VeeamServer = False
     
@@ -428,6 +441,7 @@ def main():
     except:
         pass  
 
+    
     if args.dictionary: 
         if not os.path.exists(output_directory) and args.force:
             os.makedirs(output_directory)  
