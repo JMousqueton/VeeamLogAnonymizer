@@ -123,7 +123,7 @@ Feel free to check [issues page](https://github.com/JMousqueton/Badware/issues).
 
 ## 🙏🏻 Acknowledgements
 
-For the original idea, the support and the ideas of improvement : md
+For the original idea, the support and the ideas of improvement :   
 
 * Bertrand (Veeam Legend)
 * Eric (Veeam Vanguard)
