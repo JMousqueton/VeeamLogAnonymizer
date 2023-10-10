@@ -97,7 +97,7 @@ def process_IP(input_file, output_file):
     ip_pattern = r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b(?!])"
 
     # Read the file
-    with open(input_file, 'r') as file:
+    with open(input_file, 'r', encoding='utf-8', errors='ignore') as file:
         content = file.read()
 
     # Find all IP addresses in the content using regex
