@@ -237,7 +237,7 @@ def main():
 
     # Check if any matching files were found
     if matching_files:
-        stdlog("ATTENTION : An old VeeamAnonymizer dictionnary exist in the output directory")
+        stdlog("ATTENTION : An old VeeamAnonymizer dictionnary exists in the output directory")
 
     # Init list 
     VeeamServer = False
