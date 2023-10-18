@@ -539,10 +539,11 @@ def main():
         filename = os.path.basename(input_file)
         if args.input_file:
             output_file = os.path.join(output_directory, filename)
+            full_output_directory = os.path.dirname(output_file)
         else:
             output_file = input_file.replace(args.input_directory,args.output_directory,1)
             full_output_directory = os.path.dirname(output_file)
-
+        
         if not os.path.exists(full_output_directory) and args.force:
             os.makedirs(full_output_directory)  
         
@@ -555,7 +556,7 @@ def main():
         try:
             shutil.copy(input_file, output_file)
         except:
-            errlog('Fatal Error processing ...')
+            errlog('Fatal Error processing : ' + input_file + ' --> ' + output_file)
             sys.exit(1)
 
         try:
