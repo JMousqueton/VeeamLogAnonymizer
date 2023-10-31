@@ -10,6 +10,11 @@ VeeamLogAnonymizeris is a python script designed for anonymizing log files gener
 
 I want to clarify that I'm not a developer by profession, but rather a member of the Veeam community who saw the need for a tool like this. The script has been created out of a passion for data privacy and a desire to contribute to our community.
 
+## 🆕 Important information
+
+With Eric, another Veeam Vanguard, we're developping a new version in C# to improuve drasticly the performance. 
+
+You can find the **early stage** project  [here](https://github.com/JMousqueton/VBRLogAnonymizer). 
 
 ## ⚠️ Disclamer 
 
