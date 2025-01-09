@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 __author__ = "Julien Mousqueton"
-__copyright__ = "Copyright 2023, Julien Mousqueton"
-__version__ = "1.1"
+__copyright__ = "Copyright 2025, Julien Mousqueton"
+__version__ = "1.2"
 
 # Import necessary modules
 import re
